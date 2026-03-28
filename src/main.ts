@@ -13,16 +13,18 @@ app.innerHTML = `
       <h1>Text to QR Code</h1>
       <p class="subtitle">Enter text and click Generate to create a QR code.</p>
 
-      <label class="label" for="qr-input">Text</label>
-      <input
-        id="qr-input"
-        class="input"
-        type="text"
-        placeholder="Type text here"
-        autocomplete="off"
-      />
+      <form id="qr-form">
+        <label class="label" for="qr-input">Text</label>
+        <input
+          id="qr-input"
+          class="input"
+          type="text"
+          placeholder="Type text here"
+          autocomplete="off"
+        />
 
-      <button id="generate-btn" class="button" type="button">Generate</button>
+        <button class="button" type="submit">Generate</button>
+      </form>
       <p id="message" class="message" aria-live="polite"></p>
 
       <div class="preview">
@@ -32,12 +34,12 @@ app.innerHTML = `
   </main>
 `;
 
+const form = document.querySelector<HTMLFormElement>("#qr-form");
 const input = document.querySelector<HTMLInputElement>("#qr-input");
-const button = document.querySelector<HTMLButtonElement>("#generate-btn");
 const message = document.querySelector<HTMLParagraphElement>("#message");
 const qrImage = document.querySelector<HTMLImageElement>("#qr-image");
 
-if (!input || !button || !message || !qrImage) {
+if (!form || !input || !message || !qrImage) {
   throw new Error("Required UI elements are missing");
 }
 
@@ -46,7 +48,7 @@ const setMessage = (text: string, type: "error" | "info" = "info"): void => {
   message.className = `message ${type}`;
 };
 
-button.addEventListener("click", async () => {
+const generateQrCode = async (): Promise<void> => {
   const text = input.value.trim();
 
   if (!text) {
@@ -71,4 +73,9 @@ button.addEventListener("click", async () => {
     const detail = error instanceof Error ? error.message : "Unknown QR generation error";
     setMessage(`Failed to generate QR code: ${detail}`, "error");
   }
+};
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  void generateQrCode();
 });

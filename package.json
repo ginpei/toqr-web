@@ -9,7 +9,11 @@
     "preview": "vp preview",
     "prepare": "vp config"
   },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
   "devDependencies": {
+    "@types/qrcode": "^1.5.6",
     "typescript": "~5.9.3",
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
     "vite-plus": "latest"

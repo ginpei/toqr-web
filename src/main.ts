@@ -37,20 +37,44 @@ const input = document.querySelector<HTMLTextAreaElement>("#qr-input");
 const message = document.querySelector<HTMLParagraphElement>("#message");
 const qrImage = document.querySelector<HTMLImageElement>("#qr-image");
 const generatedText = document.querySelector<HTMLParagraphElement>("#generated-text");
+const textEncoder = new TextEncoder();
+
+const QR_ERROR_CORRECTION_LEVEL = "M";
+const MAX_QR_BYTES = 2331;
+const WARNING_RATIO = 0.7;
 
 if (!form || !input || !message || !qrImage || !generatedText) {
   throw new Error("Required UI elements are missing");
 }
 
-const setErrorMessage = (text: string | null): void => {
+const setMessage = (text: string | null, type: "info" | "error" = "info"): void => {
   if (text) {
     message.textContent = text;
-    message.className = "message error";
+    message.className = `message ${type}`;
     return;
   }
 
   message.textContent = "";
   message.className = "message hidden";
+};
+
+const getByteLength = (text: string): number => textEncoder.encode(text).length;
+
+const updateUsageMessage = (text: string): void => {
+  const byteLength = getByteLength(text);
+  const threshold = MAX_QR_BYTES * WARNING_RATIO;
+
+  if (byteLength > MAX_QR_BYTES) {
+    setMessage(`Bytes: ${byteLength} / ${MAX_QR_BYTES}`, "error");
+    return;
+  }
+
+  if (byteLength > threshold) {
+    setMessage(`Bytes: ${byteLength} / ${MAX_QR_BYTES}`, "info");
+    return;
+  }
+
+  setMessage(null);
 };
 
 const resetPreview = (): void => {
@@ -65,7 +89,16 @@ const generateQrCode = async (): Promise<void> => {
 
   if (!text) {
     resetPreview();
-    setErrorMessage("Please enter text before generating a QR code.");
+    setMessage("Please enter text before generating a QR code.", "error");
+    input.focus();
+    return;
+  }
+
+  const byteLength = getByteLength(text);
+
+  if (byteLength > MAX_QR_BYTES) {
+    resetPreview();
+    setMessage(`Bytes: ${byteLength} / ${MAX_QR_BYTES}`, "error");
     input.focus();
     return;
   }
@@ -74,16 +107,17 @@ const generateQrCode = async (): Promise<void> => {
     const dataUrl = await QRCode.toDataURL(text, {
       width: 256,
       margin: 2,
+      errorCorrectionLevel: QR_ERROR_CORRECTION_LEVEL,
     });
     qrImage.src = dataUrl;
     qrImage.classList.remove("hidden");
     generatedText.textContent = text;
     generatedText.classList.remove("hidden");
-    setErrorMessage(null);
+    updateUsageMessage(text);
   } catch (error) {
     resetPreview();
     const detail = error instanceof Error ? error.message : "Unknown QR generation error";
-    setErrorMessage(`Failed to generate QR code: ${detail}`);
+    setMessage(`Failed to generate QR code: ${detail}`, "error");
   }
 };
 
@@ -97,4 +131,15 @@ input.addEventListener("keydown", (event) => {
     event.preventDefault();
     void generateQrCode();
   }
+});
+
+input.addEventListener("input", () => {
+  const text = input.value.trim();
+
+  if (!text) {
+    setMessage(null);
+    return;
+  }
+
+  updateUsageMessage(text);
 });

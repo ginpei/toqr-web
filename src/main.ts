@@ -38,6 +38,7 @@ const message = document.querySelector<HTMLParagraphElement>("#message");
 const qrImage = document.querySelector<HTMLImageElement>("#qr-image");
 const generatedText = document.querySelector<HTMLParagraphElement>("#generated-text");
 const textEncoder = new TextEncoder();
+const pageUrl = window.location.href;
 
 const QR_ERROR_CORRECTION_LEVEL = "M";
 const MAX_QR_BYTES = 2331;
@@ -59,6 +60,7 @@ const setMessage = (text: string | null, type: "info" | "error" = "info"): void 
 };
 
 const getByteLength = (text: string): number => textEncoder.encode(text).length;
+const getEffectiveText = (): string => input.value.trim() || pageUrl;
 
 const updateUsageMessage = (text: string): void => {
   const byteLength = getByteLength(text);
@@ -85,14 +87,7 @@ const resetPreview = (): void => {
 };
 
 const generateQrCode = async (): Promise<void> => {
-  const text = input.value.trim();
-
-  if (!text) {
-    resetPreview();
-    setMessage("Please enter text before generating a QR code.", "error");
-    input.focus();
-    return;
-  }
+  const text = getEffectiveText();
 
   const byteLength = getByteLength(text);
 
@@ -134,12 +129,8 @@ input.addEventListener("keydown", (event) => {
 });
 
 input.addEventListener("input", () => {
-  const text = input.value.trim();
-
-  if (!text) {
-    setMessage(null);
-    return;
-  }
-
+  const text = getEffectiveText();
   updateUsageMessage(text);
 });
+
+void generateQrCode();
